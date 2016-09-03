@@ -1,10 +1,16 @@
 /* ========================================
- * 
- * Host Uart for HiveBio Ministat
- * 
- * Copyright C. Harrison
- * BSD 2-clause license http://opensource.org/licenses/BSD-2-Clause
  *
+ * The following firmware was developed by Chuck Harrison
+ * This work is licensed under a Creative Commons Attribution 3.0 Unported License.
+ * 
+ * http://creativecommons.org/licenses/by/3.0/deed.en_US
+ * 
+ * You are free to:
+ * -To Share — to copy, distribute and transmit the work 
+ * -To Remix — to adapt the work 
+ * -To make commercial use of the work
+ *
+ * ========================================
  */
 
 #ifndef ROS_UARTS_H_
@@ -18,10 +24,6 @@ class Uart : public HardwareSerial
     void begin(unsigned long baud); // TBD: set baud rate
     int read(void);
     size_t write(uint8_t data);
-    size_t write(uint8_t* data, int length);
-  private:
-    uint8_t read_buf[64];
-    uint8_t *read_ptr, *read_tail;
 } ;
 
 extern Uart Uart0;

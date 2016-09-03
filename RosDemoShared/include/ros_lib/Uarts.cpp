@@ -1,11 +1,12 @@
 /* ========================================
- * 
- * Host USB CDC Uart for HiveBio Ministat on PSoC5
- * 
+ * PSoc4 "ROSOnAStick" Uart
+ *
  * Copyright C. Harrison
  * BSD 2-clause license http://opensource.org/licenses/BSD-2-Clause
  *
+ * ========================================
  */
+
 #include "ros.h"
 
 #include "Uarts.h"
@@ -14,57 +15,31 @@ extern "C" {
 }
 
 void Uart::begin(unsigned long baud) {
-  // baud rate unused
-  USBUART_Start(0, USBUART_DWR_VDDD_OPERATION);
-  while(!USBUART_GetConfiguration());
-  USBUART_CDC_Init();
-  read_ptr = read_tail = read_buf;
+  // compute clock divider D = HFCLK/(baud * oversampling_factor)
+  uint32_t denom = baud * ROSSerial_UART_UART_OVS_FACTOR;
+  uint16_t divider = (CYDEV_BCLK__HFCLK__HZ + (denom/2))/denom;
+  ROSSerial_UART_Clock_SetFractionalDividerRegister(divider, 0);
+  ROSSerial_UART_Start();
 };
 
 int Uart::read(void) {
   int32_t data = -1;
-  uint16_t count;
-  if (read_ptr<read_tail) {
-    data = *read_ptr++;
-  } else if ((count = USBUART_GetCount()) != 0) {
+  if (ROSSerial_UART_SpiUartGetRxBufferSize() != 0) {
     // data is ready
-    if (count > sizeof(read_buf)) {
-      count = sizeof(read_buf);
-    }
-    read_ptr = read_buf;
-    read_tail = read_buf + USBUART_GetData(read_buf, count);
-    if (read_ptr<read_tail) {
-      data = *read_ptr++;
-    }
-    P1_6_Write(1);
+    data = (int32_t)ROSSerial_UART_SpiUartReadRxData();
+  }
+  // clear error flags
+  if (ROSSerial_UART_CHECK_INTR_RX(ROSSerial_UART_INTR_RX_ERR)) {
+    // TODO: test for meaningful error (i.e. not Buffer empty) & return -1
+    ROSSerial_UART_ClearRxInterruptSource(ROSSerial_UART_INTR_RX_ERR);
   }
   return data;
 };
 
 size_t Uart::write(uint8_t data) {
-  while(USBUART_CDCIsReady() == 0u);    /* Wait till component is ready to send more data */ 
-  USBUART_PutChar(data);
+  ROSSerial_UART_SpiUartWriteTxData((uint32_t)data);
   return 1;
 };
-
-size_t Uart::write(uint8_t* data, int length) {
-  int buf_size = USBUART_EP[USBUART_cdc_data_in_ep].bufferSize;
-  while(1) {
-    while(USBUART_CDCIsReady() == 0u);    /* Wait till component is ready to send more data */
-    if (length >= buf_size) {
-      USBUART_PutData(data, buf_size);
-      length -= buf_size;
-      data += buf_size;
-    } else {
-      USBUART_PutData(data, length);
-      break;
-    }
-  }
-  return 1;
-};
-
-
-
 
 Uart Uart0;
 

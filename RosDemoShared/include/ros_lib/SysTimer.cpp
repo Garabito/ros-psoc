@@ -1,25 +1,27 @@
-/* 
- * system millisec timer for HiveBio Ministat PSoC5
- * 
- * Copyright C. Harrison
- * BSD 2-clause license http://opensource.org/licenses/BSD-2-Clause
+/* ========================================
  *
+ * The following firmware was developed by Chuck Harrison
+ * This work is licensed under a Creative Commons Attribution 3.0 Unported License.
+ * 
+ * http://creativecommons.org/licenses/by/3.0/deed.en_US
+ * 
+ * You are free to:
+ * -To Share — to copy, distribute and transmit the work 
+ * -To Remix — to adapt the work 
+ * -To make commercial use of the work
+ *
+ * ========================================
  */
-extern "C" {
-#include "project.h"
-}
 
-volatile uint32_t millis_;
+#include "ros.h"
+#include "SysTimer.h"
 
-CY_ISR(msec_Interrupt) {
-  ++millis_;
-  Millisec_ReadStatusRegister();
-};
+uint32_t SysTimer::millis_;
 
-void systimer_setup() {
-  isr_msec_StartEx(msec_Interrupt);
-  millis_ = 0;
-  Millisec_Start();
-};
+CY_ISR(SysTick_ISR)
+{
+    ++SysTimer::millis_;
+} ;
 
-uint32_t millis() { return millis_; };
+
+

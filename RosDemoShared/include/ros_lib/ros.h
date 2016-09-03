@@ -35,9 +35,15 @@
 #ifndef _ROS_H_
 #define _ROS_H_
 
+#ifndef BUILD_LIBROSSERIALEMBEDDEDLINUX
+#include "embedded_linux_comms.c"
+#include "duration.cpp"
+#include "time.cpp"
+#endif
+
 #include "ros/node_handle.h"
 
-#include "Psoc5Hardware.h"
+#include "Psoc4Hardware.h"
 
 #ifndef ROSSERIAL_PSOC4_MAX_SUBSCRIBERS
 #define ROSSERIAL_PSOC4_MAX_SUBSCRIBERS 10

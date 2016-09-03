@@ -121,7 +121,7 @@ namespace ros {
        */
     public:
       NodeHandle_() : configured_(false) {
-#if 1
+#if true
         for(unsigned int i=0; i< MAX_PUBLISHERS; i++) 
 	   publishers[i] = 0;
 
@@ -258,8 +258,6 @@ namespace ros {
               if(topic_ == TopicInfo::ID_PUBLISHER){
                 requestSyncTime();
                 negotiateTopics();
-                // avoid resets due to negotiateTopics delay: 
-                c_time = hardware_.time();
                 last_sync_time = c_time;
                 last_sync_receive_time = c_time;
                 return -1;
@@ -445,7 +443,7 @@ namespace ros {
 
         /* calculate checksum */
         int chk = 0;
-        for(unsigned int i =5; i<l+7; i++)
+        for(int i =5; i<l+7; i++)
           chk += message_out[i];
         l += 7;
         message_out[l++] = 255 - (chk%256);
