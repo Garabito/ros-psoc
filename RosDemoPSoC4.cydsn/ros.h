@@ -35,12 +35,14 @@
 #ifndef _ROS_H_
 #define _ROS_H_
 
-#ifndef BUILD_LIBROSSERIALEMBEDDEDLINUX
-#include "embedded_linux_comms.c"
+#if 0 //ndef BUILD_LIBROSSERIALEMBEDDEDLINUX
+//#include "embedded_linux_comms.c"
 #include "duration.cpp"
 #include "time.cpp"
 #endif
 
+#include "ros/time.h"
+#include "ros/duration.h"
 #include "ros/node_handle.h"
 
 #include "Psoc4Hardware.h"

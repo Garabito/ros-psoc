@@ -39,12 +39,13 @@
 
 extern "C" {
 void  CyDelay(uint32_t milliseconds);
+#include "SysTimer.h"
 }
 inline void delay(uint32_t milliseconds) { CyDelay(milliseconds); };
 
 #include "HardwareSerial.h"
 #include "Uarts.h"
-#include "SysTimer.h"
+
 
 #define DEFAULT_SERIAL Uart0
 
@@ -85,7 +86,7 @@ class Psoc4Hardware {
     }
 
 
-    unsigned long time() {return SysTimer::millis();}
+    unsigned long time() {return millis();}
 
   protected:
     HardwareSerial* iostream;

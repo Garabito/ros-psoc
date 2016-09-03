@@ -32,8 +32,8 @@
 *.cycdx
 *.cyfit
 *.rpt
-**/CortexM3/
-**/CortexM0/
+!*.hex
+!*.cyacd
 **/DP8051/
 **/Export/
 **/Generated_Source/
