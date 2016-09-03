@@ -12,6 +12,7 @@ extern "C" {
 
 #include <ros.h>
 #include "rosserial/rosserial_psoc4/src/ros_lib/examples/HelloWorld/HelloWorld.h"
+#include "rosserial/rosserial_psoc4/src/ros_lib/examples/Blink/Blink.h"
 
 //extern void init(void);
 
@@ -27,10 +28,12 @@ int main()
     uint8 reboot_count =0;
     nh.initNode();
     HelloWorld::setup();
+    Blink::setup();
 
     for(;;)
     {
         HelloWorld::loop();
+        Blink::loop();
  
         // watch for pushbutton
         //   Held down 1-2 sec = reboot request
