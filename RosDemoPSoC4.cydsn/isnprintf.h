@@ -1,12 +1,10 @@
-/* 
- * a simplified snprintf() for HiveBio Ministat
- * 
- * for license see isnprintf.c
- */
-
+/******************************************************************************
+*This file is for isnprintf()
+*******************************************************************************/
 #ifndef ISNPRINTF_H
 #define ISNPRINTF_H
 #include <inttypes.h>
+#include <cstddef>
 
 int isnprintf(char *s, int buf_len, const char *pszFmt,...);
 
