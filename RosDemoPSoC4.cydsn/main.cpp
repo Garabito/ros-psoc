@@ -13,7 +13,7 @@ extern "C" {
 #include <ros.h>
 #include "rosserial/rosserial_psoc4/src/ros_lib/examples/HelloWorld/HelloWorld.h"
 #include "rosserial/rosserial_psoc4/src/ros_lib/examples/Blink/Blink.h"
-#include "ADC_proc.h"
+#include "ADC_sync_det.h"
 
 //extern void init(void);
 

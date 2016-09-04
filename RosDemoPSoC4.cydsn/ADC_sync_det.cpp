@@ -17,7 +17,8 @@ extern "C" {
 }
 #include <ros.h>
 #include <std_msgs/Int16MultiArray.h>
-#include "ADC_proc.h"
+#include <std_msgs/UInt16.h>
+#include "ADC_sync_det.h"
 
 extern ros::NodeHandle nh;
 
@@ -26,13 +27,19 @@ extern ros::NodeHandle nh;
 namespace ADC {
 
 uint32_t next_report_time;
-const uint32_t kReportIntervalMs = 250;
+uint16_t reportIntervalMs = 250;
+
+std_msgs::UInt16 period_msg;
+void messageCb( const std_msgs::UInt16& period_msg){
+  reportIntervalMs = period_msg.data;
+}
+ros::Subscriber<std_msgs::UInt16> sub("adc_report_period", &messageCb );
 
 std_msgs::Int16MultiArray adc_msg;
 std_msgs::MultiArrayDimension adc_msg_dim[2];
-int16_t adc_data[3][MEASURE_CHANS];
 ros::Publisher p("adc", &adc_msg);
 
+int16_t adc_data[3][MEASURE_CHANS];
 int16_t* const& adc_DC = adc_data[0];
 int16_t* const& adc_ACI = adc_data[1];
 int16_t* const& adc_ACQ = adc_data[2];
@@ -41,6 +48,7 @@ int32 accum_ACI[MEASURE_CHANS];
 int32 accum_ACQ[MEASURE_CHANS];
 int16 accum_count;
 uint8 IQphase;
+uint8 update_ok;
 #define SAMPLE_RATE 3840
 #define CARRIER_HZ 60
 #define NUM_ACCUMS (SAMPLE_RATE/CARRIER_HZ/4)
@@ -82,15 +90,18 @@ CY_ISR(ADC_ISR_LOC)
 			}
             /* save accumulated reading if ready*/
             if(accum_count==0 && IQphase==0x00) {
+				// we skip update when message is being serialized
+				if (update_ok) {
                     adc_DC[chan] = accum_DC[chan]/NUM_ACCUMS;
-                    accum_DC[chan] = 0;
 				    adc_ACI[chan] = accum_ACI[chan]/NUM_ACCUMS;
-					accum_ACI[chan] = 0;
 					adc_ACQ[chan] = accum_ACQ[chan]/NUM_ACCUMS;
-					accum_ACQ[chan] = 0;
-					if (is_slow_chan) {
-						Slow_Mux_Next();
-					}
+				}
+                accum_DC[chan] = 0;
+				accum_ACI[chan] = 0;
+				accum_ACQ[chan] = 0;
+				if (is_slow_chan) {
+					Slow_Mux_Next();
+				}
             }
 			/* accumulate this reading */
             accum_DC[chan] += reading;
@@ -126,7 +137,9 @@ void adc_setup() {
 void setup()
 { 
 	nh.advertise(p);
-	next_report_time = millis()+kReportIntervalMs;
+	nh.subscribe(sub);
+	next_report_time = millis()+reportIntervalMs;
+	update_ok = 1;
 	
 	// initialize 2-dimensional array message for ADC data
 	adc_msg.data = (int16_t*)adc_data;
@@ -149,8 +162,11 @@ void setup()
 void loop()
 {
   if ((int32_t)(millis()-next_report_time) > 0) {
-    next_report_time += kReportIntervalMs;
+    next_report_time += reportIntervalMs;
+	// prevent data corruption by interrupt service while serializing message
+	update_ok = 0;
     p.publish(&adc_msg);
+	update_ok = 1;
   }
 }
 

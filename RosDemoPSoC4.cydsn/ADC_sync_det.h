@@ -7,8 +7,8 @@
  */
 
 
-#ifndef ADC_PROC_H
-#define ADC_PROC_H
+#ifndef ADC_SYNC_DET_H
+#define ADC_SYNC_DET_H
 
 namespace ADC {
 	

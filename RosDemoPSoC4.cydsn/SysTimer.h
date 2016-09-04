@@ -1,5 +1,5 @@
 /* 
- * system millisec timer for HiveBio Ministat
+ * system millisec timer for RosDemo PSoC4
  * 
  * Copyright C. Harrison
  * BSD 2-clause license http://opensource.org/licenses/BSD-2-Clause
