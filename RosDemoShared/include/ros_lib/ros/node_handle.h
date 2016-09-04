@@ -437,13 +437,13 @@ namespace ros {
         message_out[1] = PROTOCOL_VER;
         message_out[2] = (unsigned char) ((unsigned int)l&255);
         message_out[3] = (unsigned char) ((unsigned int)l>>8);
-	message_out[4] = 255 - ((message_out[2] + message_out[3])%256);
+	    message_out[4] = 255 - ((message_out[2] + message_out[3])%256);
         message_out[5] = (unsigned char) ((int)id&255);
         message_out[6] = (unsigned char) ((int)id>>8);
 
         /* calculate checksum */
         int chk = 0;
-        for(int i =5; i<l+7; i++)
+        for(int i =5; i<(int)l+7; i++)
           chk += message_out[i];
         l += 7;
         message_out[l++] = 255 - (chk%256);
