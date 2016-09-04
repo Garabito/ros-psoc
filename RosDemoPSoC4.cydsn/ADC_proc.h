@@ -11,11 +11,7 @@
 #define ADC_PROC_H
 
 namespace ADC {
-
-extern volatile int32 adc_DC[];
-extern volatile int32 adc_60HzI[];
-extern volatile int32 adc_60HzQ[];
-
+	
 void setup();
 void loop();
 

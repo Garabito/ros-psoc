@@ -9,8 +9,7 @@ extern "C" {
 	#include <project.h>
 }
 #include <ros.h>
-#include <std_msgs/Int32.h>
-
+#include <std_msgs/Int16MultiArray.h>
 #include "ADC_proc.h"
 
 extern ros::NodeHandle nh;
@@ -19,22 +18,23 @@ namespace ADC {
 
 uint32_t next_report_time;
 const uint32_t kReportIntervalMs = 250;
-std_msgs::Int32 adc_msg;
-ros::Publisher p0DC("adc0DC", &adc_msg);
-ros::Publisher p0ACI("adc0ACI", &adc_msg);
-ros::Publisher p0ACQ("adc0ACQ", &adc_msg);
 
+std_msgs::Int16MultiArray adc_msg;
+std_msgs::MultiArrayDimension adc_msg_dim[2];
+int16_t adc_data[3][ADC_TOTAL_CHANNELS_NUM];
+ros::Publisher p("adc", &adc_msg);
 
-volatile int32 adc_DC[ADC_TOTAL_CHANNELS_NUM];
-volatile int32 adc_60HzI[ADC_TOTAL_CHANNELS_NUM];
-volatile int32 adc_60HzQ[ADC_TOTAL_CHANNELS_NUM];
+int16_t* const& adc_DC = adc_data[0];
+int16_t* const& adc_ACI = adc_data[1];
+int16_t* const& adc_ACQ = adc_data[2];
 int32 accum_DC[ADC_TOTAL_CHANNELS_NUM];
-int32 accum_60HzI[ADC_TOTAL_CHANNELS_NUM];
-int32 accum_60HzQ[ADC_TOTAL_CHANNELS_NUM];
+int32 accum_ACI[ADC_TOTAL_CHANNELS_NUM];
+int32 accum_ACQ[ADC_TOTAL_CHANNELS_NUM];
 int16 accum_count;
 uint8 IQphase;
 #define SAMPLE_RATE 3840
-#define NUM_ACCUMS (SAMPLE_RATE/60/4)
+#define CARRIER_HZ 60
+#define NUM_ACCUMS (SAMPLE_RATE/CARRIER_HZ/4)
 
 CY_ISR(ADC_ISR_LOC)
 {
@@ -59,33 +59,23 @@ CY_ISR(ADC_ISR_LOC)
             if(accum_count==0 && IQphase==0x00) {
                     adc_DC[chan] = accum_DC[chan]/NUM_ACCUMS;
                     accum_DC[chan] = 0;
-				    adc_60HzI[chan] = accum_60HzI[chan]/NUM_ACCUMS;
-					accum_60HzI[chan] = 0;
-					adc_60HzQ[chan] = accum_60HzQ[chan]/NUM_ACCUMS;
-					accum_60HzQ[chan] = 0;
+				    adc_ACI[chan] = accum_ACI[chan]/NUM_ACCUMS;
+					accum_ACI[chan] = 0;
+					adc_ACQ[chan] = accum_ACQ[chan]/NUM_ACCUMS;
+					accum_ACQ[chan] = 0;
             }
 			/* accumulate this reading */
 			uint16 reading = (uint16)ADC_GetResult16(chan);
             accum_DC[chan] += reading;
-			switch (IQphase) {
-				case 0x00:
-					accum_60HzI[chan] += reading;
-					accum_60HzQ[chan] += reading;
-					break;
-				case 0x01:
-                    accum_60HzI[chan] += reading;
-                    accum_60HzQ[chan] -= reading;
-					break;
-				case 0x11:
-                    accum_60HzI[chan] -= reading;
-                    accum_60HzQ[chan] -= reading;
-					break;
-				case 0x10:
-                    accum_60HzI[chan] -= reading;
-                    accum_60HzQ[chan] += reading;
-					break;
-				default:
-					IQphase = 0x00;
+			if (IQphase & 0x01) {
+				accum_ACI[chan] += reading;
+			} else {
+				accum_ACI[chan] -= reading;
+			}
+			if (IQphase & 0x10) {
+				accum_ACQ[chan] += reading;
+			} else {
+				accum_ACQ[chan] -= reading;
 			}
         } 
     }    
@@ -95,7 +85,6 @@ CY_ISR(ADC_ISR_LOC)
 }
 
 void adc_setup() {
-	IQphase = 0x00;
     /* Init and start sequencing SAR ADC */
     ADC_Start();
     ADC_StartConvert();
@@ -105,24 +94,32 @@ void adc_setup() {
 
 void setup()
 { 
-  nh.advertise(p0DC);
-  nh.advertise(p0ACI);
-  nh.advertise(p0ACQ);
-  next_report_time = millis();
-  adc_setup();
+	nh.advertise(p);
+	next_report_time = millis()+kReportIntervalMs;
+	
+	// initialize 2-dimensional array message for ADC data
+	adc_msg.data = (int16_t*)adc_data;
+	adc_msg.data_length = 3*ADC_TOTAL_CHANNELS_NUM;
+	adc_msg.layout.dim_length = 2;
+	adc_msg.layout.data_offset = 0;
+	adc_msg.layout.dim = adc_msg_dim;
+	// outermost dimension is signal type
+	adc_msg.layout.dim[0].label = "DC ACI ACQ";
+	adc_msg.layout.dim[0].size = 3;
+	adc_msg.layout.dim[0].stride = 3*ADC_TOTAL_CHANNELS_NUM;
+	// innermost dimension is channel count
+	adc_msg.layout.dim[1].label = "chan";
+	adc_msg.layout.dim[1].size = ADC_TOTAL_CHANNELS_NUM;
+	adc_msg.layout.dim[1].stride = ADC_TOTAL_CHANNELS_NUM;
+
+	adc_setup();
 }
 
 void loop()
 {
   if ((int32_t)(millis()-next_report_time) > 0) {
     next_report_time += kReportIntervalMs;
-
-    adc_msg.data = adc_DC[0];
-    p0DC.publish(&adc_msg);
-    adc_msg.data = adc_60HzI[0];
-    p0ACI.publish(&adc_msg);
-    adc_msg.data = adc_60HzQ[0];
-    p0ACQ.publish(&adc_msg);
+    p.publish(&adc_msg);
   }
 }
 
