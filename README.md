@@ -28,10 +28,3 @@ A version was posted on the Jigsaw Renaissance wiki (now defunct) as "http://wik
 
 Subsequently, the code was used in development of a prototype turbidistat at HiveBio in Seattle. This project has since migrated to [soundbio](https://github.com/soundbio/ministat-1). The soundbio project was forked to create this repository. Since the fork, the intent has been to go back to the idea of a "demo" repository that includes examples of many features, rather than addressing a specific application.
 
-
-##Licenses
-Much of the code here is offered under a "permissive" open source license, like BSD. 
-
-
-
-
